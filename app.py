@@ -2,14 +2,21 @@ import streamlit as st
 import tempfile
 from langchain.chains.sql_database.query import create_sql_query_chain
 from langchain_community.utilities.sql_database import SQLDatabase
-from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+api_key = st.secrets["GOOGLE_GEMINI_KEY"]
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    google_api_key=api_key,
+    temperature=0.8
+)
 
 st.set_page_config(page_title="🧠 SQL Query Assistant", layout="centered")
 st.title("🧠 Natural Language to SQL")
 
 st.markdown("Yüklediğiniz `.db` dosyası üzerinde doğal dilde SQL sorguları oluşturun.")
 
-# Kullanıcıdan .db dosyasını al
 uploaded_file = st.file_uploader("Bir SQLite .db dosyası yükleyin", type=["db"])
 
 if uploaded_file:
@@ -17,15 +24,11 @@ if uploaded_file:
         tmp.write(uploaded_file.read())
         db_path = tmp.name
 
-    # SQLDatabase bağla
     db_uri = f"sqlite:///{db_path}"
     db = SQLDatabase.from_uri(db_uri)
 
-    # LLM modeli
-    llm = ChatOllama(model="llama2:latest", temperature=0.0)
     chain = create_sql_query_chain(llm, db)
 
-    # Kullanıcıdan soru al
     question = st.text_input("❓ Ne sormak istersiniz?", placeholder="Get the average age of active users.")
 
     if question:
